@@ -28,7 +28,7 @@ def load_selected_model(model_name: str, model_manifest: dict[str, dict[str, obj
 
 
 def load_uploaded_csv(uploaded_file):
-    return pd.read_csv(uploaded_file)
+    return pd.read_csv(uploaded_file, sep=";")
 
 
 def validate_uploaded_test_data(df: pd.DataFrame, feature_columns: list[str]):
