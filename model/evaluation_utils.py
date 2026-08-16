@@ -77,21 +77,19 @@ def metrics_and_details(y_true, y_pred, y_proba, classes):
     return metrics, details
 
 
-def fit_and_evaluate_model(model, x_train, y_train, x_eval, y_eval, requires_dense: bool = False):
-    train_x = as_dense_if_needed(x_train, requires_dense)
+def predict_and_score(model, x_eval, y_eval, requires_dense: bool = False):
     eval_x = as_dense_if_needed(x_eval, requires_dense)
-    model.fit(train_x, y_train)
     y_pred = model.predict(eval_x)
     y_proba = model.predict_proba(eval_x)
     classes = model.classes_
-    metrics, details = metrics_and_details(y_eval, y_pred, y_proba, classes)
-    return metrics, details
+    return metrics_and_details(y_eval, y_pred, y_proba, classes)
+
+
+def fit_and_evaluate_model(model, x_train, y_train, x_eval, y_eval, requires_dense: bool = False):
+    train_x = as_dense_if_needed(x_train, requires_dense)
+    model.fit(train_x, y_train)
+    return predict_and_score(model, x_eval, y_eval, requires_dense=requires_dense)
 
 
 def evaluate_trained_model(model, x_eval, y_eval, requires_dense: bool = False):
-    eval_x = as_dense_if_needed(x_eval, requires_dense)
-    y_pred = model.predict(eval_x)
-    y_proba = model.predict_proba(eval_x)
-    classes = model.classes_
-    metrics, details = metrics_and_details(y_eval, y_pred, y_proba, classes)
-    return metrics, details
+    return predict_and_score(model, x_eval, y_eval, requires_dense=requires_dense)

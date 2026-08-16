@@ -9,8 +9,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
+from eda import run_eda
 from evaluation_utils import fit_and_evaluate_model
-from preprocess import TARGET_COLUMN, preprocess_data, split_features_target, validate_and_clean
+from preprocess import TARGET_COLUMN, preprocess_data, validate_and_clean
 
 
 TEST_SIZE = 0.2
@@ -77,8 +78,10 @@ def split_data(df: pd.DataFrame):
 
 
 def run_preprocessing(train_df: pd.DataFrame, eval_df: pd.DataFrame):
-    feature_columns = split_features_target(train_df)[0].columns.tolist()
-    x_train_processed, x_eval_processed, y_train, y_eval, preprocessor = preprocess_data(train_df, eval_df)
+    x_train_processed, x_eval_processed, y_train, y_eval, preprocessor, feature_columns = preprocess_data(
+        train_df,
+        eval_df,
+    )
     print("Preprocessing completed")
     return x_train_processed, x_eval_processed, y_train, y_eval, preprocessor, feature_columns
 
@@ -110,6 +113,7 @@ def train_and_evaluate(x_train, y_train, x_eval, y_eval):
 
 
 def save_evaluation_outputs(metrics_df: pd.DataFrame, details_by_model: dict, metrics_path: Path, details_path: Path) -> None:
+    metrics_path.parent.mkdir(parents=True, exist_ok=True)
     metrics_df.to_csv(metrics_path, index=False)
     with details_path.open("w", encoding="utf-8") as f:
         json.dump(details_by_model, f, indent=2)
@@ -117,14 +121,16 @@ def save_evaluation_outputs(metrics_df: pd.DataFrame, details_by_model: dict, me
 
 def save_artifacts(
     model_dir: Path,
+    config_dir: Path,
     trained_models: dict[str, object],
     model_specs: dict[str, dict[str, object]],
     preprocessor,
     feature_columns: list[str],
 ) -> None:
-    manifest_path = model_dir / "model_manifest.json"
+    config_dir.mkdir(parents=True, exist_ok=True)
+    manifest_path = config_dir / "model_manifest.json"
     preprocessor_path = model_dir / "preprocessor.joblib"
-    feature_columns_path = model_dir / "feature_columns.json"
+    feature_columns_path = config_dir / "feature_columns.json"
     model_manifest = {}
 
     for model_name, model in trained_models.items():
@@ -148,10 +154,13 @@ def main() -> None:
     root_dir = Path(__file__).resolve().parent.parent
     data_path = root_dir / "train_data.csv"
     model_dir = root_dir / "model"
-    metrics_path = model_dir / "metrics.csv"
-    details_path = model_dir / "evaluation_details.json"
+    output_dir = model_dir / "output"
+    config_dir = model_dir / "config"
+    metrics_path = output_dir / "metrics.csv"
+    details_path = output_dir / "evaluation_details.json"
 
     df = load_and_clean_data(data_path)
+    run_eda(df, output_dir)
     train_df, eval_df = split_data(df)
     x_train_processed, x_eval_processed, y_train, y_eval, preprocessor, feature_columns = run_preprocessing(
         train_df,
@@ -166,7 +175,7 @@ def main() -> None:
     )
 
     save_evaluation_outputs(metrics_df, details_by_model, metrics_path, details_path)
-    save_artifacts(model_dir, trained_models, model_specs, preprocessor, feature_columns)
+    save_artifacts(model_dir, config_dir, trained_models, model_specs, preprocessor, feature_columns)
 
     print("Model training and evaluation completed")
     print(metrics_df.to_string(index=False))

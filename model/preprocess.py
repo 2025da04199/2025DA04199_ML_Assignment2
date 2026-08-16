@@ -71,6 +71,7 @@ def split_features_target(df: pd.DataFrame):
 def preprocess_data(train_df: pd.DataFrame, test_df: pd.DataFrame):
     x_train, y_train = split_features_target(train_df)
     x_test, y_test = split_features_target(test_df)
+    feature_columns = x_train.columns.tolist()
 
     numeric_cols = x_train.select_dtypes(include=["number"]).columns.tolist()
     categorical_cols = x_train.select_dtypes(exclude=["number"]).columns.tolist()
@@ -96,4 +97,4 @@ def preprocess_data(train_df: pd.DataFrame, test_df: pd.DataFrame):
     x_train_processed = preprocessor.fit_transform(x_train)
     print("Transforming test data using fitted preprocessor")
     x_test_processed = preprocessor.transform(x_test)
-    return x_train_processed, x_test_processed, y_train, y_test, preprocessor
+    return x_train_processed, x_test_processed, y_train, y_test, preprocessor, feature_columns
